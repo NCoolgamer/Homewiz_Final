@@ -1,0 +1,47 @@
+{% extends 'frontend/base.html' %}
+
+{% block Title %}Изменение задачи{% endblock %}
+
+{% block Content %}
+
+    <form action="{% url 'task_edit' task.id %}" method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="channel_uuid" class="form-label">Выберите канал для задачи</label>
+            <select readonly class="form-select" id="channel_uuid" name="channel_uuid">
+                <option selected value="{{ task.channel.id }}">{{ task.channel.name }}</option>
+            </select>
+        </div>
+
+        <div class="mb-3" id="subject_div">
+            <label for="subject_uuid" class="form-label">Выберите предмет для задачи</label>
+            <select readonly class="form-select" id="subject_uuid" name="subject_uuid">
+                <option selected value="{{ task.subject.id }}">{{ task.subject.name }}</option>
+            </select>
+        </div>
+
+        <div class="mb-3" id="description_div">
+            <label for="description" class="form-label">Описание задачи</label>
+            <textarea class="form-control" id="description" name="description" rows="3">{{ task.description }}</textarea>
+        </div>
+
+        <div class="mb-3" id="due_date_div">
+            <label for="due_date" class="form-label">Дата сдачи</label>
+            <input type="date" class="form-control" id="due_date" name="due_date" value="{{ due_date }}">
+        </div>
+
+        <div class="mb-3" id="due_date_time_div">
+            <label for="due_time" class="form-label">Время сдачи</label>
+            <input type="time" class="form-control" id="due_time" name="due_time" value="{{ due_time }}">
+        </div>
+
+        {# add a button to delete the task on the right side #}
+        {# add a button to edit the task on the left side #}
+        <div class="container-fluid">
+                <button type="submit" name="save" class="btn btn-primary">Изменить задачу</button>
+                <button type="submit" name="delete" class="float-end text-end btn btn-danger">Удалить задачу</button>
+            </div>
+        </div>
+    </form>
+
+{% endblock %}

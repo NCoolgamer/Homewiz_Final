@@ -1,0 +1,282 @@
+{% extends 'frontend/base.html' %}
+
+{% block Title %}Редактирование канала{% endblock %}
+
+{% block Content %}
+    <form action="{% url 'channel_edit' channel.id %}" method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="name" class="form-label">Название канала</label>
+            <input type="text" class="form-control" id="name" name="name" maxlength="200" required
+                   value="{{ channel.name }}">
+            <div id="nameHelp" class="form-text">Введите название канала (макс. 200 символов)</div>
+        </div>
+        {# add a disabled field with the channel join code #}
+        <div class="mb-3">
+            <label for="join_code" class="form-label">Код для вступления</label>
+            <input type="text" class="form-control" id="join_code" readonly name="join_code" value="{{ channel.code }}">
+            <div id="joinCodeHelp"
+                 class="form-text">Код для вступления в канал (скопируйте его и передайте участникам).
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Изменить канал</button>
+    </form>
+    {% if error %}
+        <p>{{ error }}</p>
+    {% endif %}
+
+    <div class="container-fluid p-2">
+        {# display the header and an add button on the same line #}
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col">
+                    <h4>Предметы канала</h4>
+                </div>
+                <div class="col">
+                    <button type="button" class="btn btn-primary float-end" data-bs-toggle="modal"
+                            data-bs-target="#addSubjectModal">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {# display a list of subjects of the channel in a table, with a button to edit or delete them on the right side #}
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th class="col">Название</th>
+                <th class="col-3 text-center">Действия</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for subject in channel.subjects.all %}
+                <tr>
+                    <td style="color: {{ subject.color }}">{{ subject.name }}</td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-secondary" data-bs-toggle="modal"
+                                data-subject-id="{{ subject.id }}"
+                                data-subject-name="{{ subject.name }}"
+                                data-subject-color="{{ subject.color }}"
+                                data-bs-target="#editSubjectModal">
+                            <i class="fa-solid fa-pencil"></i>
+                        </button>
+                        {# open a modal that asks the user if they want to delete the subject #}
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal"
+                                data-subject-id="{{ subject.id }}"
+                                data-subject-name="{{ subject.name }}"
+                                data-subject-color="{{ subject.color }}"
+                                data-bs-target="#deleteSubjectModal">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="container-fluid p-2">
+        <h4>Участники канала</h4>
+        {# display a list of users of the channel in a table, with a button to make them admin on the right side #}
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th scope="col">Пользователь</th>
+                <th scope="col">Администратор</th>
+                <th scope="col">Действия</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for user in channel.users.all %}
+                <tr>
+                    <td>{{ user.username }}{% if user == request.user %}
+                        <span class="badge bg-primary">(Вы)</span>{% endif %}</td>
+                    <td>{% if channel.owner == user %}Да{% else %}Нет{% endif %}</td>
+                    <td>
+                        {% if channel.owner != user %}
+                            {# open a modal that asks the user if they want to make the user an admin #}
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                                    data-user-id="{{ user.id }}"
+                                    data-user-name="{{ user.username }}"
+                                    data-bs-target="#changeAdminModal">
+                                <i class="fa-solid fa-crown"></i>
+                            </button>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# modal that allows the user to add a subject to the channel #}
+    <div class="modal fade" tabindex="-1" id="addSubjectModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Добавить предмет</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <form action="{% url 'channel_edit_subject_add' channel.id %}" method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="subject_name" class="form-label">Имя предмета</label>
+                            <input type="text" class="form-control" id="subject_name" name="subject_name"
+                                   placeholder="Имя предмета">
+                            <div class="form-text">Введите имя предмета (макс. 200 символов)</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="subject_color" class="form-label">Цвет предмета</label>
+                            <input type="color" class="form-control" id="subject_color" name="subject_color"
+                                   placeholder="Цвет предмета">
+                            <div class="form-text">Выберите цвет предмета</div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Создать предмет</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# modal that allows the user to edit a subject of the channel #}
+    <div class="modal fade" tabindex="-1" id="editSubjectModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Изменить предмет</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <form action="#" method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="subject_name" class="form-label">Имя предмета</label>
+                            <input type="text" class="form-control" id="subject_name" name="subject_name"
+                                   placeholder="Имя предмета">
+                            <div class="form-text">Введите имя предмета (макс. 200 символов)</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="subject_color" class="form-label">Цвет предмета</label>
+                            <input type="color" class="form-control" id="subject_color" name="subject_color"
+                                   placeholder="Цвет предмета">
+                            <div class="form-text">Выберите цвет предмета</div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Изменить предмет</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# modal that asks the user if they want to delete the subject #}
+    <div class="modal fade" tabindex="-1" id="deleteSubjectModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Удалить предмет?</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <form action="#" method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="subject_id" id="subject_id" value="">
+                        <p id="deleteSubjectModal_text">Вы уверены, что хотите удалить предмет?</p>
+
+                        <button type="submit" class="btn btn-danger">Удалить предмет</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# modal that asks the user if they want to make the user an admin #}
+    <div class="modal fade" tabindex="-1" id="changeAdminModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Изменить владельца?</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <form action="{% url 'channel_edit' channel.id %}" method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="user_id" id="user_id" value="">
+                        <p id="changeAdminModal_text">Вы уверены, что хотите изменить владельца канала?</p>
+
+                        <button type="submit" class="btn btn-danger">Изменить владельца</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var editSubjectModal = document.getElementById('editSubjectModal')
+        editSubjectModal.addEventListener('show.bs.modal', function (event) {
+            // Button that triggered the modal
+            var button = event.relatedTarget
+            // Extract info from data-bs-* attributes
+            var subjectId = button.getAttribute('data-subject-id')
+            var subjectName = button.getAttribute('data-subject-name')
+            var subjectColor = button.getAttribute('data-subject-color')
+            // Update the modal's content
+            var modalBodyNameInput = editSubjectModal.querySelector('#subject_name')
+            modalBodyNameInput.value = subjectName
+
+            var modalBodyColorInput = editSubjectModal.querySelector('#subject_color')
+            modalBodyColorInput.value = subjectColor
+
+            // set action to the correct url
+            var modalBodyForm = editSubjectModal.querySelector('form')
+            // format is channels/edit/<uuid:channel_uuid>/subjects/<uuid:subject_uuid>/edit
+            modalBodyForm.setAttribute('action', "subjects/" + subjectId + "/edit/")
+        })
+
+        var deleteSubjectModal = document.getElementById('deleteSubjectModal')
+        deleteSubjectModal.addEventListener('show.bs.modal', function (event) {
+            // Button that triggered the modal
+            var button = event.relatedTarget
+            // Extract info from data-bs-* attributes
+            var subjectId = button.getAttribute('data-subject-id')
+            var subjectName = button.getAttribute('data-subject-name')
+            // Update the modal's content
+            var modalBodyInput = deleteSubjectModal.querySelector('#subject_id')
+            modalBodyInput.value = subjectId
+
+            var modalBodyText = deleteSubjectModal.querySelector('#deleteSubjectModal_text')
+            modalBodyText.innerHTML = 'Вы уверены, что хотите удалить предмет ' + subjectName + '?'
+
+            // set action to the correct url
+            var modalBodyForm = deleteSubjectModal.querySelector('form')
+            // format is channels/edit/<uuid:channel_uuid>/subjects/<uuid:subject_uuid>/delete
+            modalBodyForm.setAttribute('action', "subjects/" + subjectId + "/delete/")
+        })
+
+
+        var makeAdminModal = document.getElementById('changeAdminModal')
+        makeAdminModal.addEventListener('show.bs.modal', function (event) {
+            // Button that triggered the modal
+            var button = event.relatedTarget
+            // Extract info from data-bs-* attributes
+            var userId = button.getAttribute('data-user-id')
+            var userName = button.getAttribute('data-user-name')
+            // Update the modal's content
+            var modalBodyInput = makeAdminModal.querySelector('#user_id')
+            modalBodyInput.value = userId
+
+            var modalBodyText = makeAdminModal.querySelector('#changeAdminModal_text')
+            modalBodyText.innerHTML = 'Вы уверены, что хотите сделать пользователя ' + userName + ' владельцем данного канала?'
+        })
+    </script>
+{% endblock %}

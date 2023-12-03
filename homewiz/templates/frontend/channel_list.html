@@ -1,0 +1,125 @@
+{% extends 'frontend/base.html' %}
+
+{% block Title %}Ваши каналы{% endblock %}
+
+{% block Content %}
+    <div class="container p-1">
+        <div class="row">
+            <div class="col-6">
+                <button type="button" class="ms-auto btn btn-primary" data-bs-toggle="modal"
+                        data-bs-target="#joinChannelModal">
+                    Вступить в канал
+                </button>
+            </div>
+            <div class="col-6">
+                <a href="{% url 'channel_create' %}" class="btn btn-secondary float-end">Создать канал</a>
+            </div>
+        </div>
+    </div>
+    {% for channel in channels %}
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">{{ channel.name }}</h5>
+                <h6 class="card-subtitle mb-2 text-muted">Код для вступления: {{ channel.code }}</h6>
+                <h6 class="card-subtitle mb-2 text-muted">Владелец: {{ channel.owner.username }}</h6>
+                <p class="card-text">Пользователей: {{ channel.users.count }}</p>
+                <div class="d-grid gap-2 d-md-flex">
+                    {% if channel.owner == user %}
+                        <a href="{% url 'channel_edit' channel.id %}" class="btn btn-primary">Редактировать</a>
+                    {% endif %}
+                    {# Present a modal when trying to leave #}
+                    <button type="button" class="ms-auto btn btn-danger" data-bs-toggle="modal"
+                            data-channel-name="{{ channel.name }}" data-channel-id="{{ channel.id }}"
+                            data-channel-users="{{ channel.users.count }}"
+                            {% if channel.owner == user %} data-channel-is-owner="true" {% endif %}
+                            data-bs-target="#leaveChannelModal">
+                        Покинуть
+                    </button>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="container">
+            <div class="alert alert-info" role="alert">
+                У вас нет каналов. Создайте или вступите в канал, и они появятся здесь.
+            </div>
+        </div>
+    {% endfor %}
+
+    {# leave channel modal #}
+    <div class="modal fade" tabindex="-1" id="leaveChannelModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Покинуть канал?</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <p id="modal-text">Вы уверены, что хотите покинуть канал {{ channel.name }}?</p>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <form action="" method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Покинуть</button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    {# Join channel modal #}
+    <div class="modal fade" tabindex="-1" id="joinChannelModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Вступить в канал</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <form action="{% url 'channel_join' %}" method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="join_code" class="form-label">Код канала</label>
+                            <input type="text" class="form-control" id="join_code" name="join_code"
+                                   placeholder="Код канала">
+                            <div class="form-text">Введите код канала в формате ХХХХХ-ХХХХХ, чтобы вступить в него.</div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Вступить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            var myModal = document.getElementById('leaveChannelModal')
+            // on click of the leave button, set the modal text to the channel name
+            myModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget
+                var channelName = button.getAttribute('data-channel-name')
+                var modalText = myModal.querySelector('#modal-text')
+                var channelUsers = button.getAttribute('data-channel-users')
+                var isOwner = button.getAttribute('data-channel-is-owner')
+                if (channelUsers == 1) {
+                    modalText.innerHTML = 'Вы уверены, что хотите покинуть канал ' + channelName + '?<br>Вы являетесь едиственным пользователем канала. <strong>После покидания канала он будет безвозвратно удален</strong>.'
+                } else if (isOwner) {
+                    modalText.innerHTML = 'Вы уверены, что хотите покинуть канал ' + channelName + '?<br>Вы являетесь владельцем канала. <strong>После покидания канала ваши права владельца будут переданы случайному участнику</strong>.'
+                } else {
+                    modalText.innerHTML = 'Вы уверены, что хотите покинуть канал ' + channelName + '?'
+                }
+
+                // set form action to the leave channel url
+                var channelId = button.getAttribute('data-channel-id')
+                var form = myModal.querySelector('form')
+                var url = '/channel/leave/' + channelId + '/'
+                form.setAttribute('action', url)
+            })
+        </script>
+
+
+{% endblock %}

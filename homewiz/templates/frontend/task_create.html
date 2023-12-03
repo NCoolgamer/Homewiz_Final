@@ -1,0 +1,70 @@
+{% extends 'frontend/base.html' %}
+
+{% block Title %}Новая задача{% endblock %}
+
+{% block Content %}
+    <form action="{% url 'task_create' %}" method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="channel_uuid" class="form-label">Выберите канал для задачи</label>
+            <select required class="form-select" id="channel_uuid" name="channel_uuid">
+                <option selected disabled value="">---------</option>
+                {% for channel in channels %}
+                    <option value="{{ channel.id }}">{{ channel.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-3" id="subject_div">
+            <label for="subject_uuid" class="form-label">Выберите предмет для задачи</label>
+            <select required class="form-select" id="subject_uuid" name="subject_uuid">
+            </select>
+        </div>
+
+        <div class="mb-3" id="description_div">
+            <label for="description" class="form-label">Описание задачи</label>
+            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+        </div>
+
+        <div class="mb-3" id="due_date_div">
+            <label for="due_date" class="form-label">Дата сдачи</label>
+            <input type="date" class="form-control" id="due_date" name="due_date">
+        </div>
+
+        <div class="mb-3" id="due_date_time_div">
+            <label for="due_time" class="form-label">Время сдачи</label>
+            <input type="time" class="form-control" id="due_time" name="due_time">
+        </div>
+
+        <button type="submit" class="btn btn-primary">Создать задачу</button>
+    </form>
+
+    <script>
+        $(document).ready(function () {
+            $('#channel_uuid').change(function () {
+                var channel_id = $(this).val();
+                $.ajax({
+                    url: "{% url 'get_subjects' %}",
+                    data: {
+                        'channel_uuid': channel_id
+                    },
+                    dataType: 'json',
+                    success: function (data) {
+                        $('#subject_div').show();
+                        $('#subject_uuid').empty();
+                        $('#subject_uuid').append('<option selected disabled value="">---------</option>');
+                        // data is a json object: "subjects": [{"id": 1, "name": "Math", "color": "#000000"}, ...]
+                        $.each(data.subjects, function (index, value) {
+                            $('#subject_uuid').append('<option value="' + value.id + '">' + value.name + '</option>');
+                        });
+                    },
+                    error: function (data) {
+                        console.log(data);
+                        alert('error');
+                    }
+                });
+            });
+        });
+    </script>
+
+{% endblock %}

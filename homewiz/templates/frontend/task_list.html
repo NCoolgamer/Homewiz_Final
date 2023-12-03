@@ -1,0 +1,75 @@
+{% extends 'frontend/base.html' %}
+
+{% block Title %}Список задач{% endblock %}
+
+{% block Content %}
+    {% if is_channel_admin %}
+        <div class="container p-1">
+            <div class="text-end">
+                <a href="{% url 'task_create' %}" class="ms-auto btn btn-primary">Добавить задачу</a>
+            </div>
+        </div>
+    {% endif %}
+    {% for task in tasks_status %}
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">{{ task.0.description }}</h5>
+                <div class="container-fluid">
+                    <div class="row align-items-center">
+                        {# button to change the task status should be to the left of the task description #}
+                        <form class="col" action="{% url 'task_done' task.0.id %}" method="post">
+                            {% csrf_token %}
+                            {% if task.1 == "done" %}
+                                <button type="submit" class="btn btn-secondary" name="done" value="done">
+                                    Отменить
+                                </button>
+                            {% else %}
+                                <button type="submit" class="btn btn-primary" name="done" value="done">
+                                    Выполнить
+                                </button>
+                            {% endif %}
+                        </form>
+                        <div class="col-9">
+                            <p class="card-text">Канал: {{ task.0.channel.name }}</p>
+                            <p class="card-text"
+                               style="color: {{ task.0.subject.color }}">Предмет: {{ task.0.subject.name }}</p>
+                            {% if task.1 == "done" %}
+                                <p class="card-text fw-bold text-success text-decoration-line-through">Выполнено</p>
+                                <p class="card-text text-success text-decoration-line-through">{{ task.0.due_date }}</p>
+                            {% elif task.1 == "overdue" %}
+                                <p class="card-text fw-bold text-danger">Просрочено</p>
+                                <p class="card-text text-danger">{{ task.0.due_date }}</p>
+                            {% else %}
+                                <p class="card-text fw-bold">Не выполнено</p>
+                                <p class="card-text">{{ task.0.due_date }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="col float-end">
+                            {% if task.0.channel.owner == user %}
+                                <a href="{% url 'task_edit' task.0.id %}" class="float-end col-auto btn btn-primary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="container">
+            <div class="alert alert-info" role="alert">
+                Нет задач. У вас есть следующие варианты:
+                <ul>
+                    {% if is_channel_admin %}
+                        <li>Создайте задачу, нажав на кнопку "Добавить задачу".</li>
+                    {% else %}
+                        <li>Создайте канал, чтобы добавить задачу.</li>
+                    {% endif %}
+                    <li>Войдите в канал с задачами.</li>
+                    <li>Подождите, пока кто-нибудь не добавит задачу в один из каналов, в которых вы состоите.</li>
+                </ul>
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}

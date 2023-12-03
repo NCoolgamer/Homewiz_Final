@@ -1,0 +1,27 @@
+{% extends 'frontend/base.html' %}
+
+{% block Title %}Вход{% endblock %}
+
+{% block Content %}
+    <p>
+    Для работы с системой, пожалуйста, войдите в свой аккаунт.
+    </p>
+    <p>
+    Если у вас нет аккаунта, вы можете <a href="{% url 'sign_up' %}">зарегистрироваться</a>.
+    </p>
+    <form action="{% url 'login' %}" method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="usernameInput" class="form-label">Имя пользователя</label>
+            <input type="text" class="form-control" id="usernameInput" name="username" placeholder="Имя пользователя">
+        </div>
+        <div class="mb-3">
+            <label for="passwordInput" class="form-label">Пароль</label>
+            <input type="password" class="form-control" id="passwordInput" name="password" placeholder="Пароль">
+        </div>
+        <button type="submit" class="btn btn-primary">Войти</button>
+    </form>
+    {% if error %}
+        <p>{{ error }}</p>
+    {% endif %}
+{% endblock %}

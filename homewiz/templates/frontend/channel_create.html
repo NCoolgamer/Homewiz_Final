@@ -1,0 +1,24 @@
+{% extends 'frontend/base.html' %}
+
+{% block Title %}Создание канала{% endblock %}
+
+{% block Content %}
+    <form action="{% url 'channel_create' %}" method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="name" class="form-label">Название канала</label>
+            <input type="text" class="form-control" id="name" name="name" maxlength="200" required>
+            <div id="nameHelp" class="form-text">Введите название канала (макс. 200 символов)</div>
+        </div>
+        {# add a disabled field with the channel join code #}
+        <div class="mb-3">
+            <label for="join_code" class="form-label">Код для вступления</label>
+            <input type="text" class="form-control" id="join_code" readonly name="join_code" value="{{ join_code }}">
+            <div id="joinCodeHelp" class="form-text">Код для вступления в канал (скопируйте его и передайте участникам).</div>
+        </div>
+        <button type="submit" class="btn btn-primary">Создать канал</button>
+    </form>
+        {% if error %}
+            <p>{{ error }}</p>
+        {% endif %}
+{% endblock %}
